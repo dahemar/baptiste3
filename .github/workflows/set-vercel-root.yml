@@ -1,0 +1,49 @@
+name: Set Vercel Project Root Directory
+
+on:
+  workflow_dispatch:
+
+jobs:
+  set-root:
+    name: Set rootDirectory to astro-app
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show environment
+        run: |
+          echo "This workflow will PATCH the Vercel project to set rootDirectory=astro-app"
+
+      - name: Set Vercel project rootDirectory
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          PROJECT_ID="prj_7FrSJJkwP8rsoQKQx3V61t5wyWwF"
+          ROOT_DIR="astro-app"
+
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "ERROR: secret VERCEL_TOKEN is not set. Add it to repository secrets and re-run this workflow." >&2
+            exit 1
+          fi
+
+          echo "Patching project $PROJECT_ID -> rootDirectory=$ROOT_DIR"
+          resp=$(curl -s -w "\n%{http_code}" -X PATCH "https://api.vercel.com/v1/projects/$PROJECT_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "{\"rootDirectory\": \"$ROOT_DIR\"}")
+
+          body=$(echo "$resp" | sed '$d')
+          status=$(echo "$resp" | tail -n1)
+
+          echo "HTTP status: $status"
+          echo "Response body: $body"
+
+          if [ "$status" -ge 200 -a "$status" -lt 300 ]; then
+            echo "Patch successful. Verifying..."
+            curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v1/projects/$PROJECT_ID" | jq '{id: .id, name: .name, rootDirectory: .rootDirectory}'
+            exit 0
+          else
+            echo "Patch failed with status $status" >&2
+            echo "$body" >&2
+            exit 1
+          fi
