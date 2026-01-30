@@ -1,0 +1,16 @@
+
+.astro/
+.cache/
+.git-submodule-backup/
+*.DS_Store
+
+.astro/
+.cache/
+.git-submodule-backup/
+*.DS_Store
+
+# Ignore audio assets
+public/assets/audio/
+
+# Ignore all generated/large public assets (videos, images, thumbnails)
+public/assets/
